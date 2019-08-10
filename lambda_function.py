@@ -89,9 +89,9 @@ def lambda_handler(event, context):
                     #values = account.values()
                     usernames = tableutils.resolve_ids_to_names(list(uids))
                     uids_to_usernames = dict(zip(uids, usernames))
-                    debit_lines = ["{:10}  {}".format(uids_to_usernames[k], abs(v)) for k, v in account.items() if v < 0]
+                    debit_lines = ["{:16}  {:3.2f}".format(uids_to_usernames[k], abs(v)) for k, v in account.items() if v < 0]
                     debit_block = "\nYou owe these people money:\n{}".format("\n".join(debit_lines)) if len(debit_lines) > 0 else ""
-                    credit_lines = ["{:10}  {}".format(uids_to_usernames[k], v) for k, v in account.items() if v > 0]
+                    credit_lines = ["{:16}  {:3.2f}".format(uids_to_usernames[k], v) for k, v in account.items() if v > 0]
                     credit_block = "\nThese people owe you money:\n{}".format("\n".join(credit_lines)) if len(credit_lines) > 0 else ""
                     payload = {
                         'method': 'sendMessage',
