@@ -3,7 +3,7 @@ Module for parsing telegram text messages.
 """
 import re
 
-import teleutils
+from . import teleutils
 
 
 class MsgException(Exception):
@@ -17,7 +17,6 @@ class MsgException(Exception):
 
 
 def extract_mention(message):
-    gid = int(message["chat"]["id"])
     mention_message_entities = [e for e in message["entities"] if e["type"] in ["mention", "text_mention"]]
     if len(mention_message_entities) == 0:
         return None
