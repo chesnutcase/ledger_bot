@@ -24,7 +24,7 @@ def extract_mentions_and_payment_amounts(message):
     mention_message_entities.sort(key=lambda e: e["offset"])
     mention_message_entity = mention_message_entities.pop()
     mentioned_name = message["text"][mention_message_entity["offset"]:mention_message_entity["offset"] + mention_message_entity["length"]]
-    number_matches = re.match(r'(\d+\.?\d*) ?(\d+\.?\d*)?', message["text"][mention_message_entity["offset"] + mention_message_entity["length"]:].strip())
+    number_matches = re.match(r'(\d+(?:\.\d+)?)(?![^\s]) ?(?:(\d+(?:\.\d+)?)(?![^\s]))?', message["text"][mention_message_entity["offset"] + mention_message_entity["length"]:].strip())
     if number_matches is None:
         raise MsgException(r'I dont see the numbers, mason! Please enter the format /owe@{} <username> <amount> <?tax> <?description>'.format(teleutils.BOT_NAME), gid)
     nett_price = float(number_matches.group(1))
