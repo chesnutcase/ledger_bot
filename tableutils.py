@@ -1,5 +1,6 @@
 import boto3
 import time
+from datetime import date
 import decimal
 from boto3.dynamodb.conditions import Key, Attr
 
@@ -100,6 +101,37 @@ def view_account(gid, user):
             account[dict_key] = 0
         account[dict_key] = account[dict_key] + (entry["amt"] * (-1 if is_receiver else 1))
     return account
+
+
+def view_logs(gid, user_id, filter_id, esk=None):
+    gid = int(gid)
+    uid = int(user_id)
+    fid = int(filter_id) if filter_id is not None else None
+    if fid is not None:
+        filter_expression = (Attr('from').eq(uid) & Attr('to').eq(fid)) | (Attr('from').eq(fid) & Attr('to').eq(uid))
+    else:
+        filter_expression = Attr('from').eq(uid) | Attr('to').eq(uid)
+    entries = []
+    while len(entries) < 0:
+        response = TRANSACTIONS_TABLE.query(
+            Select='ALL_ATTRIBUTES',
+            KeyConditionExpression=Key('group_id').eq(int(gid)) & Key('timestamp').gt(0),
+            FilterExpression=filter_expression,
+            Limit=10,
+            ExclusiveStartKey=esk
+        )
+        entries.extend(response["Items"])
+        lek = response.get("LastEvaluatedKey", None)
+    # break into timeframes
+
+    def destructive_filter(list, callback):
+        pass
+    # this week
+    this_week = [e for e in entries if date.fromtimestamp(e["timestamp"]).isocalendar()[1] == date.today().isocalendar()[1]]
+    # last week
+    last_week = [e for e in entries if date.fromtimestamp(e["timestamp"]).isocalendar()[1] == date.today().isocalendar()[1] - 1]
+    # this month
+    # last month
 
 
 def register_user(uid, *, username="", name=""):

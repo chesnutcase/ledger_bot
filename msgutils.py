@@ -16,6 +16,20 @@ class MsgException(Exception):
         }
 
 
+def extract_mention(message):
+    gid = int(message["chat"]["id"])
+    mention_message_entities = [e for e in message["entities"] if e["type"] in ["mention", "text_mention"]]
+    if len(mention_message_entities) == 0:
+        return None
+    mention_message_entities.sort(key=lambda e: e["offset"])
+    mention_message_entity = mention_message_entities.pop()
+    return mention_message_entity
+
+
+def message_is_forward(message):
+    return any([(k in message.keys()) for k in ["forward_from", "forward_from_chat", "forward_from_message_id", "forward_signature", "forward_sender_name", "forward_date"]])
+
+
 def extract_mentions_and_payment_amounts(message):
     gid = int(message["chat"]["id"])
     mention_message_entities = [e for e in message["entities"] if e["type"] in ["mention", "text_mention"]]

@@ -22,6 +22,8 @@ All exit points must return a message to send back to Telegram.
 def lambda_handler(event, context):
     if(event.get("message") is not None):
         message = event["message"]
+        if msgutils.message_is_forward(message):
+            return "message is forward, ignoring"
         command_match = re.match(r'/(\w+)@{}'.format(teleutils.BOT_NAME), message["text"])
         if command_match is not None:
             # open connection to database and set vars
@@ -100,7 +102,15 @@ def lambda_handler(event, context):
                         'parse_mode': 'HTML'
                     }
                     return payload
-
+                elif command == "log":
+                    # TODO
+                    sender_id = message["from"]["id"]
+                    filter_name = msgutils.extract_mentions(message)
+                    filter_ids = tableutils.resolve_names_to_ids([filter_name]) if filter_name is not None else None
+                    if filter_name is not None and filter_ids is None:
+                        raise msgutils.MsgException("Could not find {} in ledger, is he registered?".format(filter_name))
+                    logs = tableutils.view_logs(gid, sender_id, filter_ids[0])
+                    pass
                 elif command == "resolve":
                     # TODO
                     raise msgutils.MsgException("Command not implemented yet", gid)
