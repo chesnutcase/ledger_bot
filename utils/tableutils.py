@@ -147,3 +147,18 @@ def register_user(uid, *, username="", name=""):
     if name != "":
         data["name"] = name
     USERS_TABLE.put_item(Item=data)
+
+
+def find_transaction(gid, mid):
+    response = TRANSACTIONS_TABLE.query(
+        KeyConditionExpression=Key('group_id').eq(gid),
+        FilterExpression=Attr('id').eq(mid)
+    )
+    try:
+        return response["Items"].pop()
+    except IndexError:
+        return None
+
+
+def update_transaction(transaction):
+    TRANSACTIONS_TABLE.put_item(Item=transaction)
