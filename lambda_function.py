@@ -49,6 +49,22 @@ def lambda_handler(event, context):
                     return payload
             except msgutils.MsgException as ex:
                 return ex.error_payload
+    elif event.get("callback_query") is not None:
+        callback_name = event["callback_query"].get("data")
+        try:
+            if callback_name is not None:
+                callback_module = importlib.import_module("callbacks.{}".format(callback_name))
+                tableutils.open_connections_and_tables()
+                return callback_module.run(event["callback_query"])
+            else:
+                raise ModuleNotFoundError()
+        except ModuleNotFoundError:
+            payload = {
+                'method': 'answerCallbackQuery',
+                'callback_query_id': event["callback_query"]["id"],
+                'text': 'Unrecognised callback data'
+            }
+            return payload
 
     # TODO implement
     return {
