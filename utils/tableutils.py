@@ -48,7 +48,7 @@ def resolve_ids_to_names(ids):
     return names
 
 
-def debit_transaction(gid, sender, receiver, amt, *, msg_id=None, description=""):
+def debit_transaction(gid, sender, receiver, amt, *, msg_id=None, description="", on_hold=False):
     with decimal.localcontext(boto3.dynamodb.types.DYNAMODB_CONTEXT) as ctx:
         ctx.traps[decimal.Inexact] = False
         ctx.traps[decimal.Rounded] = False
@@ -59,14 +59,15 @@ def debit_transaction(gid, sender, receiver, amt, *, msg_id=None, description=""
             'from': sender,
             'to': receiver,
             'amt': -abs(amt),
-            'timestamp': round(timestamp, 2)
+            'timestamp': round(timestamp, 2),
+            'on_hold': on_hold
         }
         if description is not None and description.strip() != "":
             item["description"] = description.strip()
         TRANSACTIONS_TABLE.put_item(Item=item)
 
 
-def credit_transaction(gid, sender, receiver, amt, *, msg_id=None):
+def credit_transaction(gid, sender, receiver, amt, *, msg_id=None, on_hold=False):
     with decimal.localcontext(boto3.dynamodb.types.DYNAMODB_CONTEXT) as ctx:
         ctx.traps[decimal.Inexact] = False
         ctx.traps[decimal.Rounded] = False
@@ -77,7 +78,8 @@ def credit_transaction(gid, sender, receiver, amt, *, msg_id=None):
             'from': sender,
             'to': receiver,
             'amt': abs(amt),
-            'timestamp': round(timestamp, 2)
+            'timestamp': round(timestamp, 2),
+            'on_hold': on_hold
         })
 
 
@@ -87,7 +89,7 @@ def view_account(gid, user):
     response = TRANSACTIONS_TABLE.query(
         Select='ALL_ATTRIBUTES',
         KeyConditionExpression=Key('group_id').eq(int(gid)) & Key('timestamp').gt(0),
-        FilterExpression=Attr('from').eq(int(user)) | Attr('to').eq(int(user))
+        FilterExpression=(Attr('from').eq(int(user)) | Attr('to').eq(int(user))) & Attr('on_hold').ne(True)
     )
     entries = response["Items"]
     account = {}
