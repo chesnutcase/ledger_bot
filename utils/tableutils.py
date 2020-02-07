@@ -67,12 +67,12 @@ def debit_transaction(gid, sender, receiver, amt, *, msg_id=None, description=""
         TRANSACTIONS_TABLE.put_item(Item=item)
 
 
-def credit_transaction(gid, sender, receiver, amt, *, msg_id=None, on_hold=False):
+def credit_transaction(gid, sender, receiver, amt, *, msg_id=None, description="", on_hold=False):
     with decimal.localcontext(boto3.dynamodb.types.DYNAMODB_CONTEXT) as ctx:
         ctx.traps[decimal.Inexact] = False
         ctx.traps[decimal.Rounded] = False
         timestamp = ctx.create_decimal_from_float(time.time())
-        TRANSACTIONS_TABLE.put_item(Item={
+        item = {
             'group_id': gid,
             'id': msg_id,
             'from': sender,
@@ -80,7 +80,10 @@ def credit_transaction(gid, sender, receiver, amt, *, msg_id=None, on_hold=False
             'amt': abs(amt),
             'timestamp': round(timestamp, 2),
             'on_hold': on_hold
-        })
+        }
+        if description is not None and description.strip() != "":
+            item["description"] = description.strip()
+        TRANSACTIONS_TABLE.put_item(Item=item)
 
 
 def view_account(gid, user):
